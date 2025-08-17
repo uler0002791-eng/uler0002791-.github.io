@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>个人主页</title>
+    <meta name="description" content="个人简历和作品集展示网站">
+    <meta name="keywords" content="个人主页,简历,作品集,PDF">
+    <meta name="author" content="Admin">
+    
+    <!-- 网站图标 -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E👤%3C/text%3E%3C/svg%3E">
+    
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <!-- 顶部导航栏 -->
+    <div class="top-nav">
+        <div class="nav-left">
+            <h1><i class="fas fa-user"></i> 个人主页</h1>
+        </div>
+        <div class="nav-right">
+            <div id="userInfo" class="user-info" style="display: none;">
+                <span>欢迎，<span id="username"></span></span>
+                <button id="logoutBtn" class="logout-btn">
+                    <i class="fas fa-sign-out-alt"></i> 退出
+                </button>
+            </div>
+            <button id="loginBtn" class="login-btn">
+                <i class="fas fa-sign-in-alt"></i> 登录
+            </button>
+        </div>
+    </div>
+
+    <!-- 主容器 -->
+    <div class="main-container">
+        <!-- 左侧简历区域 -->
+        <div class="resume-section">
+            <div class="resume-header">
+                <h2><i class="fas fa-file-pdf"></i> 个人简历</h2>
+                <div class="resume-controls">
+                    <button id="uploadBtn" class="upload-btn">
+                        <i class="fas fa-upload"></i> 上传PDF
+                    </button>
+                    <button id="downloadBtn" class="download-btn" style="display: none;">
+                        <i class="fas fa-download"></i> 下载
+                    </button>
+                    <button id="clearBtn" class="clear-btn" style="display: none;">
+                        <i class="fas fa-trash"></i> 清除
+                    </button>
+                </div>
+            </div>
+            
+            <!-- PDF显示区域 -->
+            <div class="pdf-container">
+                <div id="pdfViewer" class="pdf-viewer">
+                    <div class="pdf-placeholder">
+                        <i class="fas fa-file-pdf"></i>
+                        <p>个人简历，请拖拽上传pdf，直接展示在这里</p>
+                        <p class="pdf-hint">支持拖拽上传</p>
+                    </div>
+                </div>
+                
+                <!-- PDF控制栏 -->
+                <div id="pdfControls" class="pdf-controls" style="display: none;">
+                    <button id="prevPage"><i class="fas fa-chevron-left"></i></button>
+                    <span id="pageInfo">第 <span id="currentPage">1</span> 页 / 共 <span id="totalPages">1</span> 页</span>
+                    <button id="nextPage"><i class="fas fa-chevron-right"></i></button>
+                    <div class="zoom-controls">
+                        <button id="zoomOut"><i class="fas fa-search-minus"></i></button>
+                        <span id="zoomLevel">100%</span>
+                        <button id="zoomIn"><i class="fas fa-search-plus"></i></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 右侧作品区域 -->
+        <div class="portfolio-section">
+            <div class="portfolio-header">
+                <h2><i class="fas fa-images"></i> 作品集</h2>
+                <div class="portfolio-controls">
+                    <button id="addWorkBtn" class="add-work-btn">
+                        <i class="fas fa-plus"></i> 添加作品
+                    </button>
+                    <div class="view-toggle">
+                        <button id="gridView" class="view-btn active">
+                            <i class="fas fa-th"></i>
+                        </button>
+                        <button id="listView" class="view-btn">
+                            <i class="fas fa-list"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 作品瀑布流容器 -->
+            <div class="portfolio-container">
+                <div id="portfolioGrid" class="portfolio-grid">
+                    <!-- 示例作品 -->
+                    <div class="portfolio-item" data-type="image">
+                        <div class="item-content">
+                            <img src="https://picsum.photos/300/400?random=1" alt="作品1">
+                            <div class="item-overlay">
+                                <div class="item-info">
+                                    <h3>网站设计</h3>
+                                    <p>响应式企业官网设计</p>
+                                </div>
+                                <div class="item-actions">
+                                    <button class="preview-btn" onclick="previewItem(this)">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button class="edit-btn" onclick="editItem(this)">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="delete-btn" onclick="deleteItem(this)">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="portfolio-item" data-type="image">
+                        <div class="item-content">
+                            <img src="https://picsum.photos/300/200?random=2" alt="作品2">
+                            <div class="item-overlay">
+                                <div class="item-info">
+                                    <h3>横版设计</h3>
+                                    <p>横版海报设计</p>
+                                </div>
+                                <div class="item-actions">
+                                    <button class="preview-btn" onclick="previewItem(this)">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button class="edit-btn" onclick="editItem(this)">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="delete-btn" onclick="deleteItem(this)">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="portfolio-item" data-type="video">
+                        <div class="item-content">
+                            <div class="video-thumbnail">
+                                <img src="https://picsum.photos/400/300?random=3" alt="视频作品" style="width: 100%; height: auto;">
+                                <div class="play-icon">
+                                    <i class="fas fa-play"></i>
+                                </div>
+                            </div>
+                            <div class="item-overlay">
+                                <div class="item-info">
+                                    <h3>宣传视频</h3>
+                                    <p>产品介绍视频 (4:3)</p>
+                                </div>
+                                <div class="item-actions">
+                                    <button class="preview-btn" onclick="previewItem(this)">
+                                        <i class="fas fa-play"></i>
+                                    </button>
+                                    <button class="delete-btn" onclick="deleteItem(this)">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="portfolio-item" data-type="image">
+                        <div class="item-content">
+                            <img src="https://picsum.photos/300/350?random=4" alt="作品4">
+                            <div class="item-overlay">
+                                <div class="item-info">
+                                    <h3>UI设计</h3>
+                                    <p>移动应用界面设计</p>
+                                </div>
+                                <div class="item-actions">
+                                    <button class="preview-btn" onclick="previewItem(this)">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button class="edit-btn" onclick="editItem(this)">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="delete-btn" onclick="deleteItem(this)">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="portfolio-item" data-type="image">
+                        <div class="item-content">
+                            <img src="https://picsum.photos/300/500?random=5" alt="作品5">
+                            <div class="item-overlay">
+                                <div class="item-info">
+                                    <h3>品牌设计</h3>
+                                    <p>企业品牌视觉识别</p>
+                                </div>
+                                <div class="item-actions">
+                                    <button class="preview-btn" onclick="previewItem(this)">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button class="edit-btn" onclick="editItem(this)">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="delete-btn" onclick="deleteItem(this)">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="portfolio-item" data-type="image">
+                        <div class="item-content">
+                            <img src="https://picsum.photos/300/280?random=6" alt="作品6">
+                            <div class="item-overlay">
+                                <div class="item-info">
+                                    <h3>插画设计</h3>
+                                    <p>手绘数字插画</p>
+                                </div>
+                                <div class="item-actions">
+                                    <button class="preview-btn" onclick="previewItem(this)">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button class="edit-btn" onclick="editItem(this)">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="delete-btn" onclick="deleteItem(this)">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="portfolio-item" data-type="image">
+                        <div class="item-content">
+                            <img src="https://picsum.photos/300/520?random=7" alt="作品7">
+                            <div class="item-overlay">
+                                <div class="item-info">
+                                    <h3>长图设计</h3>
+                                    <p>信息图表设计</p>
+                                </div>
+                                <div class="item-actions">
+                                    <button class="preview-btn" onclick="previewItem(this)">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button class="edit-btn" onclick="editItem(this)">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="delete-btn" onclick="deleteItem(this)">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="portfolio-item" data-type="image">
+                        <div class="item-content">
+                            <img src="https://picsum.photos/300/180?random=8" alt="作品8">
+                            <div class="item-overlay">
+                                <div class="item-info">
+                                    <h3>横幅设计</h3>
+                                    <p>网站横幅广告</p>
+                                </div>
+                                <div class="item-actions">
+                                    <button class="preview-btn" onclick="previewItem(this)">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button class="edit-btn" onclick="editItem(this)">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="delete-btn" onclick="deleteItem(this)">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="portfolio-item" data-type="video">
+                        <div class="item-content">
+                            <div class="video-thumbnail">
+                                <img src="https://picsum.photos/320/180?random=9" alt="视频作品" style="width: 100%; height: auto;">
+                                <div class="play-icon">
+                                    <i class="fas fa-play"></i>
+                                </div>
+                            </div>
+                            <div class="item-overlay">
+                                <div class="item-info">
+                                    <h3>宽屏视频</h3>
+                                    <p>横版宣传片 (16:9)</p>
+                                </div>
+                                <div class="item-actions">
+                                    <button class="preview-btn" onclick="previewItem(this)">
+                                        <i class="fas fa-play"></i>
+                                    </button>
+                                    <button class="delete-btn" onclick="deleteItem(this)">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 预览模态框 -->
+    <div id="previewModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn">&times;</span>
+            <div id="previewContent" class="preview-content">
+                <!-- 预览内容将动态加载 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 添加作品模态框 -->
+    <div id="addWorkModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn">&times;</span>
+            <div class="add-work-form">
+                <h3>添加新作品</h3>
+                <div class="form-group">
+                    <label>作品标题</label>
+                    <input type="text" id="workTitle" placeholder="输入作品标题">
+                </div>
+                <div class="form-group">
+                    <label>作品描述</label>
+                    <textarea id="workDescription" placeholder="输入作品描述"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>作品类型</label>
+                    <select id="workType">
+                        <option value="image">图片</option>
+                        <option value="video">视频</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>选择文件</label>
+                    <input type="file" id="workFile" accept="image/*,video/*">
+                    <div class="file-drop-zone" id="fileDropZone">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <p>拖拽文件到此处或点击选择</p>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button id="cancelAdd" class="cancel-btn">取消</button>
+                    <button id="confirmAdd" class="confirm-btn">添加</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 编辑作品模态框 -->
+    <div id="editWorkModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn">&times;</span>
+            <div class="edit-work-form">
+                <h3>编辑作品信息</h3>
+                <div class="form-group">
+                    <label>作品标题</label>
+                    <input type="text" id="editWorkTitle" placeholder="输入作品标题">
+                </div>
+                <div class="form-group">
+                    <label>作品描述</label>
+                    <textarea id="editWorkDescription" placeholder="输入作品描述"></textarea>
+                </div>
+                <div class="form-actions">
+                    <button id="cancelEdit" class="cancel-btn">取消</button>
+                    <button id="confirmEdit" class="confirm-btn">保存</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 登录模态框 -->
+    <div id="loginModal" class="modal">
+        <div class="modal-content auth-modal">
+            <span class="close-btn">&times;</span>
+            <div class="auth-form">
+                <h3>管理员登录</h3>
+                <div class="form-group">
+                    <label>用户名</label>
+                    <input type="text" id="loginUsername" placeholder="请输入用户名">
+                </div>
+                <div class="form-group">
+                    <label>密码</label>
+                    <input type="password" id="loginPassword" placeholder="请输入密码">
+                </div>
+                <div class="form-actions">
+                    <button id="confirmLogin" class="confirm-btn">登录</button>
+                </div>
+                <div class="auth-switch">
+                    <p style="text-align: center; color: #6c757d; font-size: 0.9rem;">仅限管理员登录</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+    <!-- 未登录提示模态框 -->
+    <div id="loginRequiredModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn">&times;</span>
+            <div class="login-required-content">
+                <i class="fas fa-lock" style="font-size: 48px; color: #ff6b6b; margin-bottom: 20px;"></i>
+                <h3>需要登录</h3>
+                <p>您需要登录后才能进行此操作</p>
+                <div class="form-actions">
+                    <button id="goToLogin" class="confirm-btn">去登录</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 隐藏的文件输入 -->
+    <input type="file" id="pdfFileInput" accept=".pdf" style="display: none;">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
