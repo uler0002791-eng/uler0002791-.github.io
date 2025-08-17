@@ -3,10 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>个人主页</title>
-    <meta name="description" content="个人简历和作品集展示网站">
-    <meta name="keywords" content="个人主页,简历,作品集,PDF">
+    <title>个人主页 | 简历与作品集展示</title>
+    <meta name="description" content="现代化的个人主页，支持PDF简历展示、作品集管理。采用响应式设计，支持图片和视频作品的瀑布流展示。">
+    <meta name="keywords" content="个人主页,简历,作品集,PDF,瀑布流,响应式设计,作品展示">
     <meta name="author" content="Admin">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://你的用户名.github.io/个人主页/">
+    <meta property="og:title" content="个人主页 | 简历与作品集展示">
+    <meta property="og:description" content="现代化的个人主页，支持PDF简历展示、作品集管理。">
+    <meta property="og:image" content="https://你的用户名.github.io/个人主页/preview.png">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://你的用户名.github.io/个人主页/">
+    <meta property="twitter:title" content="个人主页 | 简历与作品集展示">
+    <meta property="twitter:description" content="现代化的个人主页，支持PDF简历展示、作品集管理。">
+    <meta property="twitter:image" content="https://你的用户名.github.io/个人主页/preview.png">
     
     <!-- 网站图标 -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E👤%3C/text%3E%3C/svg%3E">
@@ -20,17 +34,6 @@
         <div class="nav-left">
             <h1><i class="fas fa-user"></i> 个人主页</h1>
         </div>
-        <div class="nav-right">
-            <div id="userInfo" class="user-info" style="display: none;">
-                <span>欢迎，<span id="username"></span></span>
-                <button id="logoutBtn" class="logout-btn">
-                    <i class="fas fa-sign-out-alt"></i> 退出
-                </button>
-            </div>
-            <button id="loginBtn" class="login-btn">
-                <i class="fas fa-sign-in-alt"></i> 登录
-            </button>
-        </div>
     </div>
 
     <!-- 主容器 -->
@@ -40,14 +43,8 @@
             <div class="resume-header">
                 <h2><i class="fas fa-file-pdf"></i> 个人简历</h2>
                 <div class="resume-controls">
-                    <button id="uploadBtn" class="upload-btn">
-                        <i class="fas fa-upload"></i> 上传PDF
-                    </button>
                     <button id="downloadBtn" class="download-btn" style="display: none;">
                         <i class="fas fa-download"></i> 下载
-                    </button>
-                    <button id="clearBtn" class="clear-btn" style="display: none;">
-                        <i class="fas fa-trash"></i> 清除
                     </button>
                 </div>
             </div>
@@ -81,9 +78,6 @@
             <div class="portfolio-header">
                 <h2><i class="fas fa-images"></i> 作品集</h2>
                 <div class="portfolio-controls">
-                    <button id="addWorkBtn" class="add-work-btn">
-                        <i class="fas fa-plus"></i> 添加作品
-                    </button>
                     <div class="view-toggle">
                         <button id="gridView" class="view-btn active">
                             <i class="fas fa-th"></i>
@@ -111,12 +105,7 @@
                                     <button class="preview-btn" onclick="previewItem(this)">
                                         <i class="fas fa-eye"></i>
                                     </button>
-                                    <button class="edit-btn" onclick="editItem(this)">
-                                        <i class="fas fa-edit"></i>
-                                    </button>
-                                    <button class="delete-btn" onclick="deleteItem(this)">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
+
                                 </div>
                             </div>
                         </div>
@@ -134,12 +123,7 @@
                                     <button class="preview-btn" onclick="previewItem(this)">
                                         <i class="fas fa-eye"></i>
                                     </button>
-                                    <button class="edit-btn" onclick="editItem(this)">
-                                        <i class="fas fa-edit"></i>
-                                    </button>
-                                    <button class="delete-btn" onclick="deleteItem(this)">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
+
                                 </div>
                             </div>
                         </div>
@@ -162,9 +146,7 @@
                                     <button class="preview-btn" onclick="previewItem(this)">
                                         <i class="fas fa-play"></i>
                                     </button>
-                                    <button class="delete-btn" onclick="deleteItem(this)">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
+
                                 </div>
                             </div>
                         </div>
@@ -182,12 +164,7 @@
                                     <button class="preview-btn" onclick="previewItem(this)">
                                         <i class="fas fa-eye"></i>
                                     </button>
-                                    <button class="edit-btn" onclick="editItem(this)">
-                                        <i class="fas fa-edit"></i>
-                                    </button>
-                                    <button class="delete-btn" onclick="deleteItem(this)">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
+
                                 </div>
                             </div>
                         </div>
@@ -205,12 +182,7 @@
                                     <button class="preview-btn" onclick="previewItem(this)">
                                         <i class="fas fa-eye"></i>
                                     </button>
-                                    <button class="edit-btn" onclick="editItem(this)">
-                                        <i class="fas fa-edit"></i>
-                                    </button>
-                                    <button class="delete-btn" onclick="deleteItem(this)">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
+
                                 </div>
                             </div>
                         </div>
@@ -228,12 +200,7 @@
                                     <button class="preview-btn" onclick="previewItem(this)">
                                         <i class="fas fa-eye"></i>
                                     </button>
-                                    <button class="edit-btn" onclick="editItem(this)">
-                                        <i class="fas fa-edit"></i>
-                                    </button>
-                                    <button class="delete-btn" onclick="deleteItem(this)">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
+
                                 </div>
                             </div>
                         </div>
@@ -251,12 +218,7 @@
                                     <button class="preview-btn" onclick="previewItem(this)">
                                         <i class="fas fa-eye"></i>
                                     </button>
-                                    <button class="edit-btn" onclick="editItem(this)">
-                                        <i class="fas fa-edit"></i>
-                                    </button>
-                                    <button class="delete-btn" onclick="deleteItem(this)">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
+
                                 </div>
                             </div>
                         </div>
@@ -274,12 +236,7 @@
                                     <button class="preview-btn" onclick="previewItem(this)">
                                         <i class="fas fa-eye"></i>
                                     </button>
-                                    <button class="edit-btn" onclick="editItem(this)">
-                                        <i class="fas fa-edit"></i>
-                                    </button>
-                                    <button class="delete-btn" onclick="deleteItem(this)">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
+
                                 </div>
                             </div>
                         </div>
@@ -302,9 +259,7 @@
                                     <button class="preview-btn" onclick="previewItem(this)">
                                         <i class="fas fa-play"></i>
                                     </button>
-                                    <button class="delete-btn" onclick="deleteItem(this)">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
+
                                 </div>
                             </div>
                         </div>
@@ -324,108 +279,17 @@
         </div>
     </div>
 
-    <!-- 添加作品模态框 -->
-    <div id="addWorkModal" class="modal">
-        <div class="modal-content">
-            <span class="close-btn">&times;</span>
-            <div class="add-work-form">
-                <h3>添加新作品</h3>
-                <div class="form-group">
-                    <label>作品标题</label>
-                    <input type="text" id="workTitle" placeholder="输入作品标题">
-                </div>
-                <div class="form-group">
-                    <label>作品描述</label>
-                    <textarea id="workDescription" placeholder="输入作品描述"></textarea>
-                </div>
-                <div class="form-group">
-                    <label>作品类型</label>
-                    <select id="workType">
-                        <option value="image">图片</option>
-                        <option value="video">视频</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>选择文件</label>
-                    <input type="file" id="workFile" accept="image/*,video/*">
-                    <div class="file-drop-zone" id="fileDropZone">
-                        <i class="fas fa-cloud-upload-alt"></i>
-                        <p>拖拽文件到此处或点击选择</p>
-                    </div>
-                </div>
-                <div class="form-actions">
-                    <button id="cancelAdd" class="cancel-btn">取消</button>
-                    <button id="confirmAdd" class="confirm-btn">添加</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- 编辑作品模态框 -->
-    <div id="editWorkModal" class="modal">
-        <div class="modal-content">
-            <span class="close-btn">&times;</span>
-            <div class="edit-work-form">
-                <h3>编辑作品信息</h3>
-                <div class="form-group">
-                    <label>作品标题</label>
-                    <input type="text" id="editWorkTitle" placeholder="输入作品标题">
-                </div>
-                <div class="form-group">
-                    <label>作品描述</label>
-                    <textarea id="editWorkDescription" placeholder="输入作品描述"></textarea>
-                </div>
-                <div class="form-actions">
-                    <button id="cancelEdit" class="cancel-btn">取消</button>
-                    <button id="confirmEdit" class="confirm-btn">保存</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- 登录模态框 -->
-    <div id="loginModal" class="modal">
-        <div class="modal-content auth-modal">
-            <span class="close-btn">&times;</span>
-            <div class="auth-form">
-                <h3>管理员登录</h3>
-                <div class="form-group">
-                    <label>用户名</label>
-                    <input type="text" id="loginUsername" placeholder="请输入用户名">
-                </div>
-                <div class="form-group">
-                    <label>密码</label>
-                    <input type="password" id="loginPassword" placeholder="请输入密码">
-                </div>
-                <div class="form-actions">
-                    <button id="confirmLogin" class="confirm-btn">登录</button>
-                </div>
-                <div class="auth-switch">
-                    <p style="text-align: center; color: #6c757d; font-size: 0.9rem;">仅限管理员登录</p>
-                </div>
-            </div>
-        </div>
-    </div>
 
 
 
-    <!-- 未登录提示模态框 -->
-    <div id="loginRequiredModal" class="modal">
-        <div class="modal-content">
-            <span class="close-btn">&times;</span>
-            <div class="login-required-content">
-                <i class="fas fa-lock" style="font-size: 48px; color: #ff6b6b; margin-bottom: 20px;"></i>
-                <h3>需要登录</h3>
-                <p>您需要登录后才能进行此操作</p>
-                <div class="form-actions">
-                    <button id="goToLogin" class="confirm-btn">去登录</button>
-                </div>
-            </div>
-        </div>
-    </div>
 
-    <!-- 隐藏的文件输入 -->
-    <input type="file" id="pdfFileInput" accept=".pdf" style="display: none;">
+
+
+
+
+
+
+
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script src="script.js"></script>

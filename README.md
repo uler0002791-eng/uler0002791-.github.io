@@ -1,14 +1,37 @@
-# 个人主页
+# 个人主页 Personal Portfolio
+
+[![GitHub Pages](https://img.shields.io/badge/Demo-GitHub%20Pages-brightgreen)](https://你的用户名.github.io/个人主页)
+[![HTML5](https://img.shields.io/badge/HTML5-E34F26?logo=html5&logoColor=white)](https://developer.mozilla.org/en-US/docs/Web/HTML)
+[![CSS3](https://img.shields.io/badge/CSS3-1572B6?logo=css3&logoColor=white)](https://developer.mozilla.org/en-US/docs/Web/CSS)
+[![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?logo=javascript&logoColor=black)](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
+[![PDF.js](https://img.shields.io/badge/PDF.js-FF6B35?logo=mozilla&logoColor=white)](https://mozilla.github.io/pdf.js/)
 
 一个现代化的个人主页项目，支持PDF简历展示和作品集管理。
 
+## 🚀 在线演示
+
+- **演示地址**: [点击访问](https://你的用户名.github.io/个人主页) *(请替换为您的实际GitHub Pages地址)*
+
+> **📌 说明**: 这是一个纯展示版本，仅支持浏览功能，不支持上传或修改操作。
+
+## 📸 项目截图
+
+### 主界面
+- 左侧：PDF简历展示区域（支持预览、下载）
+- 右侧：作品集瀑布流展示（支持图片和视频）
+
+### 展示功能
+- 纯静态展示，无需登录
+- 作品预览和浏览
+- 响应式设计，适配移动端
+
 ## 功能特性
 
-- 📄 **PDF简历展示**：上传、预览、下载PDF简历，支持缩放和翻页
-- 🎨 **作品集管理**：瀑布流布局展示图片和视频作品
-- 🔐 **管理员登录**：安全的认证系统，只有管理员可以修改内容
+- 📄 **PDF简历展示**：预览、下载PDF简历，支持缩放和翻页
+- 🎨 **作品集展示**：瀑布流布局展示图片和视频作品
+- 👁️ **作品预览**：支持图片和视频的全屏预览
 - 📱 **响应式设计**：适配各种屏幕尺寸
-- 💾 **本地存储**：数据持久化保存在浏览器本地
+- 💾 **本地存储**：演示数据保存在浏览器本地
 
 ## 技术栈
 
@@ -67,29 +90,28 @@ A       www     服务器IP地址
 - 在 Netlify/Vercel 中可自动配置HTTPS
 - 云服务器可使用 Certbot 自动配置
 
-## 管理员登录
+## 自定义内容
 
-默认管理员账户：
-- 用户名：`admin`
-- 密码：在 `script.js` 中的 `ADMIN_USER.password` 查看
+### 添加PDF简历
+将您的PDF简历文件重命名为 `resume.pdf` 并放置在项目根目录，然后修改 `script.js` 中的默认加载逻辑。
 
-**重要安全提示：**
-1. 部署前请修改默认密码
-2. 建议使用强密码（包含大小写字母、数字、特殊字符）
-3. 定期更换密码
-
-## 修改管理员密码
-
-编辑 `script.js` 文件中的 `ADMIN_USER` 对象：
+### 添加作品集内容
+修改 `script.js` 中的 `getDefaultPortfolioItems()` 函数，替换示例作品数据：
 
 ```javascript
-const ADMIN_USER = {
-    id: 'admin_001',
-    username: 'admin',  // 可修改用户名
-    password: '你的新密码',  // 修改这里
-    email: 'admin@example.com',
-    role: 'admin'
-};
+function getDefaultPortfolioItems() {
+    return [
+        {
+            id: 'work1',
+            title: '您的作品标题',
+            description: '作品描述',
+            type: 'image', // 或 'video'
+            url: '作品文件URL',
+            createdAt: new Date().toISOString()
+        }
+        // 添加更多作品...
+    ];
+}
 ```
 
 ## 自定义配置
@@ -118,35 +140,30 @@ const ADMIN_USER = {
 
 ## 使用说明
 
-### 访客模式
-- 可查看简历和作品集
-- 无法进行任何修改操作
+### 浏览功能
+- 查看PDF简历：支持翻页、缩放、下载
+- 浏览作品集：瀑布流布局，支持预览
+- 响应式设计：在不同设备上都有良好的体验
 
-### 管理员模式
-1. 点击右上角"登录"按钮
-2. 输入管理员用户名和密码
-3. 登录后可以：
-   - 上传和管理PDF简历
-   - 添加、编辑、删除作品
-   - 所有内容都会保存在浏览器本地
-
-## 备份数据
-
-重要数据存储在浏览器的 localStorage 中，建议定期备份：
-1. 导出浏览器数据
-2. 保存上传的文件
-3. 记录管理员账户信息
+### 自定义部署
+1. Fork或下载此项目
+2. 修改 `script.js` 中的作品集数据
+3. 添加您的PDF简历文件
+4. 部署到GitHub Pages或其他静态托管平台
 
 ## 常见问题
 
-**Q: 如何重置所有数据？**
-A: 清除浏览器的 localStorage 数据即可
+**Q: 如何添加自己的作品？**
+A: 修改 `script.js` 中的 `getDefaultPortfolioItems()` 函数
 
-**Q: 可以有多个管理员吗？**
-A: 当前版本只支持一个管理员账户
+**Q: 如何更换PDF简历？**
+A: 将您的PDF文件转换为base64格式并存储在localStorage中，或修改加载逻辑
 
 **Q: 如何修改页面布局？**
 A: 编辑 `styles.css` 文件中的相关样式
+
+**Q: 支持哪些文件格式？**
+A: PDF简历，图片（JPEG, PNG, GIF, WebP），视频（MP4, WebM）
 
 ## 技术支持
 
@@ -157,4 +174,4 @@ A: 编辑 `styles.css` 文件中的相关样式
 
 ## 许可证
 
-此项目仅供个人使用。
+此项目采用 MIT 许可证，可自由使用和修改。

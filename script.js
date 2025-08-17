@@ -1,4 +1,21 @@
-// PDF.js 初始化
+/**
+ * 个人主页 - 主要脚本文件（展示版本）
+ * 
+ * 功能模块：
+ * 1. PDF 简历显示 - 显示和下载PDF文件
+ * 2. 作品集展示 - 瀑布流展示图片和视频作品
+ * 3. 本地存储 - 数据加载
+ * 
+ * 依赖库：
+ * - PDF.js: PDF渲染和显示
+ * - Font Awesome: 图标库
+ * 
+ * @author Admin
+ * @version 2.0.0 (展示版本)
+ * @license MIT
+ */
+
+// PDF.js 初始化配置
 pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
 // 全局变量
@@ -8,245 +25,199 @@ let totalPages = 0;
 let currentZoom = 1.0; // 默认缩放级别
 let portfolioItems = [];
 
-// 认证相关变量
-let isLoggedIn = false;
-let currentUser = null;
-
-// 预设的管理员账户
-const ADMIN_USER = {
-    id: 'admin_001',
-    username: 'admin',
-    password: 'MySecurePassword2024!',
-    email: 'admin@example.com',
-    role: 'admin'
-};
-
 // 等待DOM加载完成
 document.addEventListener('DOMContentLoaded', function() {
-    initializeAuth(); // 初始化认证功能
-    initializePdfUpload();
+    initializePdfDisplay();
     loadSavedPdf(); // 加载之前保存的PDF
     initializePortfolioView(); // 初始化作品集视图切换
     initializePortfolio(); // 初始化作品集功能
-    initializeModals(); // 初始化模态框
+    initializeModals(); // 初始化预览模态框
 });
 
-// 初始化PDF上传功能
-function initializePdfUpload() {
-    const uploadBtn = document.getElementById('uploadBtn');
+// 初始化PDF显示功能（仅显示，无上传功能）
+function initializePdfDisplay() {
     const downloadBtn = document.getElementById('downloadBtn');
-    const pdfFileInput = document.getElementById('pdfFileInput');
-    const pdfViewer = document.getElementById('pdfViewer');
-
-    // 上传按钮点击事件
-    uploadBtn.addEventListener('click', () => {
-        if (!requireLogin()) return;
-        pdfFileInput.click();
-    });
-
-    // 文件选择事件
-    pdfFileInput.addEventListener('change', handlePdfUpload);
-
-    // 拖拽上传
-    pdfViewer.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        pdfViewer.classList.add('dragover');
-    });
-
-    pdfViewer.addEventListener('dragleave', (e) => {
-        e.preventDefault();
-        pdfViewer.classList.remove('dragover');
-    });
-
-    pdfViewer.addEventListener('drop', (e) => {
-        e.preventDefault();
-        pdfViewer.classList.remove('dragover');
-        
-        if (!requireLogin()) return;
-        
-        const files = e.dataTransfer.files;
-        if (files.length > 0 && files[0].type === 'application/pdf') {
-            handlePdfFile(files[0]);
-        }
-    });
 
     // PDF控制按钮事件
-    document.getElementById('prevPage').addEventListener('click', () => {
-        if (currentPage > 1) {
-            currentPage--;
+    const prevBtn = document.getElementById('prevPage');
+    const nextBtn = document.getElementById('nextPage');
+    const zoomInBtn = document.getElementById('zoomIn');
+    const zoomOutBtn = document.getElementById('zoomOut');
+
+    if (prevBtn) {
+        prevBtn.addEventListener('click', () => {
+            if (currentPage > 1) {
+                currentPage--;
+                renderPage();
+            }
+        });
+    }
+
+    if (nextBtn) {
+        nextBtn.addEventListener('click', () => {
+            if (currentPage < totalPages) {
+                currentPage++;
+                renderPage();
+            }
+        });
+    }
+
+    if (zoomInBtn) {
+        zoomInBtn.addEventListener('click', () => {
+            currentZoom = Math.min(currentZoom + 0.2, 3.0);
             renderPage();
-        }
-    });
+        });
+    }
 
-    document.getElementById('nextPage').addEventListener('click', () => {
-        if (currentPage < totalPages) {
-            currentPage++;
+    if (zoomOutBtn) {
+        zoomOutBtn.addEventListener('click', () => {
+            currentZoom = Math.max(currentZoom - 0.2, 0.5);
             renderPage();
-        }
-    });
-
-    document.getElementById('zoomIn').addEventListener('click', () => {
-        currentZoom *= 1.2;
-        updateZoom();
-        renderPage();
-    });
-
-    document.getElementById('zoomOut').addEventListener('click', () => {
-        currentZoom /= 1.2;
-        updateZoom();
-        renderPage();
-    });
+        });
+    }
 
     // 下载按钮事件
-    downloadBtn.addEventListener('click', downloadPdf);
-    
-    // 清除按钮事件
-    const clearBtn = document.getElementById('clearBtn');
-    clearBtn.addEventListener('click', () => {
-        if (!requireLogin()) return;
-        if (confirm('确定要清除保存的PDF吗？')) {
-            clearSavedPdf();
-        }
-    });
-}
-
-// 处理PDF上传
-function handlePdfUpload(event) {
-    const file = event.target.files[0];
-    if (file && file.type === 'application/pdf') {
-        handlePdfFile(file);
+    if (downloadBtn) {
+        downloadBtn.addEventListener('click', downloadPdf);
     }
 }
 
-// 处理PDF文件
-function handlePdfFile(file) {
-    const fileReader = new FileReader();
+// 从localStorage加载已保存的PDF
+function loadSavedPdf() {
+    const savedPdf = localStorage.getItem('savedPdf');
+    if (savedPdf) {
+        try {
+            const pdfData = Uint8Array.from(atob(savedPdf), c => c.charCodeAt(0));
+            handlePdfData(pdfData);
+        } catch (error) {
+            console.error('加载保存的PDF失败:', error);
+        }
+    } else {
+        // 如果没有保存的PDF，显示占位符
+        showPdfPlaceholder();
+    }
+}
+
+// 显示PDF占位符
+function showPdfPlaceholder() {
     const pdfViewer = document.getElementById('pdfViewer');
-    
-    // 显示加载状态
-    pdfViewer.innerHTML = '<div class="loading">正在加载PDF...</div>';
-    
-    fileReader.onload = function() {
-        const typedarray = new Uint8Array(this.result);
+    if (pdfViewer) {
+        pdfViewer.innerHTML = `
+            <div class="pdf-placeholder">
+                <i class="fas fa-file-pdf" style="font-size: 64px; color: #ccc; margin-bottom: 20px;"></i>
+                <p style="color: #666;">暂无简历文件</p>
+            </div>
+        `;
+    }
+}
+
+// 处理PDF数据
+async function handlePdfData(data) {
+    try {
+        currentPdf = await pdfjsLib.getDocument({data: data}).promise;
+        totalPages = currentPdf.numPages;
+        currentPage = 1;
+        currentZoom = 1.0;
         
-        pdfjsLib.getDocument(typedarray).promise.then(pdf => {
-            currentPdf = pdf;
-            totalPages = pdf.numPages;
-            currentPage = 1;
-            
-            // 更新界面
-            document.getElementById('pdfControls').style.display = 'flex';
-            document.getElementById('downloadBtn').style.display = 'inline-flex';
-            document.getElementById('clearBtn').style.display = 'inline-flex';
-            document.getElementById('totalPages').textContent = totalPages;
-            
-            // 渲染第一页
-            renderPage();
-            
-            // 存储文件用于下载
-            document.getElementById('downloadBtn').pdfFile = file;
-            
-            // 保存PDF到本地存储
-            savePdfToLocalStorage(file);
-        }).catch(error => {
-            console.error('PDF加载失败:', error);
-            pdfViewer.innerHTML = '<div class="pdf-placeholder"><i class="fas fa-exclamation-triangle"></i><p>PDF加载失败，请重试</p></div>';
-        });
-    };
-    
-    fileReader.readAsArrayBuffer(file);
+        renderPage();
+        updatePdfControls();
+        
+        const downloadBtn = document.getElementById('downloadBtn');
+        if (downloadBtn) {
+            downloadBtn.style.display = 'inline-block';
+        }
+    } catch (error) {
+        console.error('PDF处理失败:', error);
+        alert('PDF文件加载失败，请检查文件格式');
+    }
 }
 
 // 渲染PDF页面
-function renderPage() {
-    if (!currentPdf) return;
+async function renderPage() {
+    if (!currentPdf || currentPage < 1 || currentPage > totalPages) return;
     
-    const pdfViewer = document.getElementById('pdfViewer');
-    
-    currentPdf.getPage(currentPage).then(page => {
-        // 计算缩放比例 - 让PDF以合适的尺寸显示
-        const containerWidth = pdfViewer.clientWidth - 40; // 减去padding
-        const viewport = page.getViewport({ scale: 1.0 });
-        
-        // 计算合适的缩放比例 - 设置为当前理想的显示比例
-        let baseScale;
-        
-        // 根据容器宽度计算合适的缩放比例，让PDF显示得既清晰又完整
-        const idealScale = containerWidth / viewport.width;
-        
-        if (idealScale < 0.8) {
-            // 如果需要大幅缩小，使用0.8作为最小比例
-            baseScale = 0.8;
-        } else if (idealScale > 1.2) {
-            // 如果可以放大很多，限制在1.2倍
-            baseScale = 1.2;
-        } else {
-            // 使用计算出的理想比例
-            baseScale = idealScale;
-        }
-        
-        // 应用用户缩放
-        const finalScale = baseScale * currentZoom;
-        
-        // 使用更高的DPI来提升清晰度
-        const pixelRatio = window.devicePixelRatio || 1;
-        const highDPIScale = finalScale * pixelRatio;
-        
-        const scaledViewport = page.getViewport({ scale: highDPIScale });
-        
-        // 创建canvas
-        const canvas = document.createElement('canvas');
+    try {
+        const page = await currentPdf.getPage(currentPage);
+        const canvas = document.getElementById('pdfCanvas');
         const context = canvas.getContext('2d');
         
-        // 设置canvas的实际大小（高DPI）
-        canvas.height = scaledViewport.height;
-        canvas.width = scaledViewport.width;
+        // 获取页面视口
+        const container = document.querySelector('.pdf-container');
+        const containerWidth = container.clientWidth - 40; // 减去padding
+        const viewport = page.getViewport({scale: 1});
         
-        // 设置canvas的显示大小
-        canvas.style.width = (scaledViewport.width / pixelRatio) + 'px';
-        canvas.style.height = (scaledViewport.height / pixelRatio) + 'px';
+        // 计算合适的缩放比例，确保PDF适合容器宽度
+        let baseScale = containerWidth / viewport.width;
+        baseScale = Math.min(Math.max(baseScale, 0.8), 1.2); // 限制在0.8-1.2之间
         
-        canvas.id = 'pdfCanvas';
+        const finalScale = baseScale * currentZoom;
+        const scaledViewport = page.getViewport({scale: finalScale});
         
-        // 清空并添加canvas
-        pdfViewer.innerHTML = '';
-        pdfViewer.appendChild(canvas);
+        // 设置高DPI渲染
+        const devicePixelRatio = window.devicePixelRatio || 1;
+        const scaleFactor = devicePixelRatio * 2; // 进一步提高清晰度
         
-        // 启用抗锯齿和图像平滑
+        canvas.width = scaledViewport.width * scaleFactor;
+        canvas.height = scaledViewport.height * scaleFactor;
+        canvas.style.width = scaledViewport.width + 'px';
+        canvas.style.height = scaledViewport.height + 'px';
+        
+        // 设置画布的缩放
+        context.scale(scaleFactor, scaleFactor);
+        
+        // 启用图像平滑以提高质量
         context.imageSmoothingEnabled = true;
         context.imageSmoothingQuality = 'high';
         
-        // 渲染PDF页面
         const renderContext = {
             canvasContext: context,
             viewport: scaledViewport
         };
         
-        page.render(renderContext).promise.then(() => {
-            // 更新页面信息
-            document.getElementById('currentPage').textContent = currentPage;
-            
-            // 更新按钮状态
-            document.getElementById('prevPage').disabled = currentPage <= 1;
-            document.getElementById('nextPage').disabled = currentPage >= totalPages;
-        });
-    });
+        await page.render(renderContext).promise;
+        
+        // 更新页面信息
+        updatePageInfo();
+        
+    } catch (error) {
+        console.error('页面渲染失败:', error);
+    }
 }
 
-// 更新缩放显示
-function updateZoom() {
-    const zoomPercent = Math.round(currentZoom * 100);
-    document.getElementById('zoomLevel').textContent = zoomPercent + '%';
+// 更新页面信息显示
+function updatePageInfo() {
+    const pageInfo = document.getElementById('pageInfo');
+    if (pageInfo) {
+        pageInfo.textContent = `${currentPage} / ${totalPages}`;
+    }
+}
+
+// 更新PDF控制按钮状态
+function updatePdfControls() {
+    const prevBtn = document.getElementById('prevPage');
+    const nextBtn = document.getElementById('nextPage');
+    
+    if (prevBtn) {
+        prevBtn.disabled = currentPage <= 1;
+    }
+    if (nextBtn) {
+        nextBtn.disabled = currentPage >= totalPages;
+    }
+    
+    updatePageInfo();
 }
 
 // 下载PDF
 function downloadPdf() {
-    const downloadBtn = document.getElementById('downloadBtn');
-    if (downloadBtn.pdfFile) {
-        const url = URL.createObjectURL(downloadBtn.pdfFile);
+    if (!currentPdf) return;
+    
+    const savedPdf = localStorage.getItem('savedPdf');
+    if (savedPdf) {
+        const blob = new Blob([Uint8Array.from(atob(savedPdf), c => c.charCodeAt(0))], {type: 'application/pdf'});
+        const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = downloadBtn.pdfFile.name;
+        a.download = '个人简历.pdf';
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -254,749 +225,254 @@ function downloadPdf() {
     }
 }
 
-// 保存PDF到本地存储
-function savePdfToLocalStorage(file) {
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        const arrayBuffer = e.target.result;
-        const base64String = arrayBufferToBase64(arrayBuffer);
-        
-        // 保存PDF数据和文件信息
-        const pdfData = {
-            data: base64String,
-            name: file.name,
-            size: file.size,
-            type: file.type,
-            lastModified: file.lastModified,
-            savedAt: new Date().toISOString()
-        };
-        
-        try {
-            localStorage.setItem('savedPDF', JSON.stringify(pdfData));
-            console.log('PDF已保存到本地存储');
-        } catch (error) {
-            console.error('保存PDF失败:', error);
-            alert('PDF文件过大，无法保存到本地存储');
-        }
-    };
-    reader.readAsArrayBuffer(file);
-}
-
-// 从本地存储加载PDF
-function loadSavedPdf() {
-    try {
-        const savedPdfData = localStorage.getItem('savedPDF');
-        if (savedPdfData) {
-            const pdfData = JSON.parse(savedPdfData);
-            
-            // 将base64转换回ArrayBuffer
-            const arrayBuffer = base64ToArrayBuffer(pdfData.data);
-            
-            // 创建File对象
-            const file = new File([arrayBuffer], pdfData.name, {
-                type: pdfData.type,
-                lastModified: pdfData.lastModified
-            });
-            
-            // 加载PDF
-            handlePdfFile(file);
-            
-            console.log('已加载之前保存的PDF:', pdfData.name);
-        }
-    } catch (error) {
-        console.error('加载保存的PDF失败:', error);
-    }
-}
-
-// ArrayBuffer转Base64
-function arrayBufferToBase64(buffer) {
-    let binary = '';
-    const bytes = new Uint8Array(buffer);
-    const len = bytes.byteLength;
-    for (let i = 0; i < len; i++) {
-        binary += String.fromCharCode(bytes[i]);
-    }
-    return window.btoa(binary);
-}
-
-// Base64转ArrayBuffer
-function base64ToArrayBuffer(base64) {
-    const binaryString = window.atob(base64);
-    const len = binaryString.length;
-    const bytes = new Uint8Array(len);
-    for (let i = 0; i < len; i++) {
-        bytes[i] = binaryString.charCodeAt(i);
-    }
-    return bytes.buffer;
-}
-
-// 清除保存的PDF
-function clearSavedPdf() {
-    try {
-        localStorage.removeItem('savedPDF');
-        console.log('已清除保存的PDF');
-        
-        // 重置界面
-        const pdfViewer = document.getElementById('pdfViewer');
-        pdfViewer.innerHTML = `
-            <div class="pdf-placeholder">
-                <i class="fas fa-file-pdf"></i>
-                <p>个人简历，请拖拽上传pdf，直接展示在这里</p>
-                <p class="pdf-hint">支持拖拽上传</p>
-            </div>
-        `;
-        
-        document.getElementById('pdfControls').style.display = 'none';
-        document.getElementById('downloadBtn').style.display = 'none';
-        document.getElementById('clearBtn').style.display = 'none';
-        
-        currentPdf = null;
-        currentPage = 1;
-        totalPages = 0;
-        currentZoom = 1.0;
-    } catch (error) {
-        console.error('清除PDF失败:', error);
-    }
-}
-
 // 初始化作品集视图切换
 function initializePortfolioView() {
-    const gridBtn = document.getElementById('gridView');
-    const listBtn = document.getElementById('listView');
-    
-    if (gridBtn && listBtn) {
-        gridBtn.addEventListener('click', () => setViewMode('grid'));
-        listBtn.addEventListener('click', () => setViewMode('list'));
-    }
-}
-
-// 设置视图模式
-function setViewMode(mode) {
-    const gridBtn = document.getElementById('gridView');
-    const listBtn = document.getElementById('listView');
+    const gridViewBtn = document.getElementById('gridView');
+    const listViewBtn = document.getElementById('listView');
     const portfolioGrid = document.getElementById('portfolioGrid');
     
-    if (!gridBtn || !listBtn || !portfolioGrid) return;
-    
-    if (mode === 'grid') {
-        gridBtn.classList.add('active');
-        listBtn.classList.remove('active');
-        // 瀑布流模式：3列
-        portfolioGrid.style.columnCount = '3';
-        portfolioGrid.style.display = 'block';
-    } else {
-        listBtn.classList.add('active');
-        gridBtn.classList.remove('active');
-        // 列表模式：1列
-        portfolioGrid.style.columnCount = '1';
-        portfolioGrid.style.display = 'block';
-    }
-}
-
-// 初始化作品集功能
-function initializePortfolio() {
-    const addWorkBtn = document.getElementById('addWorkBtn');
-    const addWorkModal = document.getElementById('addWorkModal');
-    const editWorkModal = document.getElementById('editWorkModal');
-
-    // 添加作品按钮
-    if (addWorkBtn && addWorkModal) {
-        addWorkBtn.addEventListener('click', () => {
-            if (!requireLogin()) return;
-            addWorkModal.style.display = 'block';
+    if (gridViewBtn && listViewBtn && portfolioGrid) {
+        gridViewBtn.addEventListener('click', () => {
+            portfolioGrid.classList.remove('list-view');
+            portfolioGrid.classList.add('grid-view');
+            gridViewBtn.classList.add('active');
+            listViewBtn.classList.remove('active');
         });
-
-        // 确认添加作品
-        const confirmBtn = document.getElementById('confirmAdd');
-        if (confirmBtn) {
-            confirmBtn.addEventListener('click', addWork);
-        }
         
-        // 取消添加作品
-        const cancelBtn = document.getElementById('cancelAdd');
-        if (cancelBtn) {
-            cancelBtn.addEventListener('click', () => {
-                addWorkModal.style.display = 'none';
-                resetAddWorkForm();
-            });
-        }
-
-        // 文件拖拽上传
-        setupFileDragAndDrop();
-    }
-
-    // 编辑作品功能
-    if (editWorkModal) {
-        // 确认编辑
-        const confirmEditBtn = document.getElementById('confirmEdit');
-        if (confirmEditBtn) {
-            confirmEditBtn.addEventListener('click', saveEditWork);
-        }
-        
-        // 取消编辑
-        const cancelEditBtn = document.getElementById('cancelEdit');
-        if (cancelEditBtn) {
-            cancelEditBtn.addEventListener('click', () => {
-                editWorkModal.style.display = 'none';
-            });
-        }
+        listViewBtn.addEventListener('click', () => {
+            portfolioGrid.classList.remove('grid-view');
+            portfolioGrid.classList.add('list-view');
+            listViewBtn.classList.add('active');
+            gridViewBtn.classList.remove('active');
+        });
     }
 }
 
-// 设置文件拖拽上传
-function setupFileDragAndDrop() {
-    const fileDropZone = document.getElementById('fileDropZone');
-    const workFile = document.getElementById('workFile');
-
-    if (!fileDropZone || !workFile) return;
-
-    fileDropZone.addEventListener('click', () => {
-        workFile.click();
-    });
-
-    fileDropZone.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        fileDropZone.classList.add('dragover');
-    });
-
-    fileDropZone.addEventListener('dragleave', (e) => {
-        e.preventDefault();
-        fileDropZone.classList.remove('dragover');
-    });
-
-    fileDropZone.addEventListener('drop', (e) => {
-        e.preventDefault();
-        fileDropZone.classList.remove('dragover');
-        
-        const files = e.dataTransfer.files;
-        if (files.length > 0) {
-            workFile.files = files;
-            updateFileDropZone(files[0]);
-        }
-    });
-
-    workFile.addEventListener('change', (e) => {
-        if (e.target.files.length > 0) {
-            updateFileDropZone(e.target.files[0]);
-        }
-    });
+// 初始化作品集功能（仅展示）
+function initializePortfolio() {
+    loadPortfolioItems();
+    renderPortfolio();
 }
 
-// 更新文件拖拽区域显示
-function updateFileDropZone(file) {
-    const fileDropZone = document.getElementById('fileDropZone');
-    if (fileDropZone) {
-        fileDropZone.innerHTML = `
-            <i class="fas fa-check-circle" style="color: #28a745;"></i>
-            <p>已选择文件: ${file.name}</p>
-        `;
+// 从localStorage加载作品集数据
+function loadPortfolioItems() {
+    const saved = localStorage.getItem('portfolioItems');
+    if (saved) {
+        try {
+            portfolioItems = JSON.parse(saved);
+        } catch (error) {
+            console.error('加载作品集数据失败:', error);
+            portfolioItems = getDefaultPortfolioItems();
+        }
+    } else {
+        portfolioItems = getDefaultPortfolioItems();
     }
 }
 
-// 添加作品
-function addWork() {
-    const title = document.getElementById('workTitle');
-    const description = document.getElementById('workDescription');
-    const type = document.getElementById('workType');
-    const file = document.getElementById('workFile');
-
-    if (!title || !description || !type || !file) return;
-
-    const titleValue = title.value.trim();
-    const descriptionValue = description.value.trim();
-    const typeValue = type.value;
-    const fileValue = file.files[0];
-
-    if (!titleValue || !descriptionValue || !fileValue) {
-        alert('请填写所有必填字段并选择文件');
-        return;
-    }
-
-    // 创建文件URL
-    const fileUrl = URL.createObjectURL(fileValue);
-    
-    // 创建作品对象
-    const work = {
-        id: Date.now(),
-        title: titleValue,
-        description: descriptionValue,
-        type: typeValue,
-        url: fileUrl,
-        fileName: fileValue.name
-    };
-
-    // 添加到作品列表
-    portfolioItems.push(work);
-    
-    // 渲染作品项
-    renderPortfolioItem(work);
-    
-    // 关闭模态框并重置表单
-    document.getElementById('addWorkModal').style.display = 'none';
-    resetAddWorkForm();
+// 获取默认作品集数据（用于演示）
+function getDefaultPortfolioItems() {
+    return [
+        {
+            id: 'demo1',
+            title: '示例作品 1',
+            description: '这是一个示例图片作品的描述',
+            type: 'image',
+            url: 'https://picsum.photos/800/600?random=1',
+            createdAt: new Date().toISOString()
+        },
+        {
+            id: 'demo2',
+            title: '示例作品 2',
+            description: '这是一个示例图片作品的描述',
+            type: 'image',
+            url: 'https://picsum.photos/600/800?random=2',
+            createdAt: new Date().toISOString()
+        },
+        {
+            id: 'demo3',
+            title: '示例作品 3',
+            description: '这是一个示例图片作品的描述',
+            type: 'image',
+            url: 'https://picsum.photos/900/600?random=3',
+            createdAt: new Date().toISOString()
+        },
+        {
+            id: 'demo4',
+            title: '示例作品 4',
+            description: '这是一个示例图片作品的描述',
+            type: 'image',
+            url: 'https://picsum.photos/700/900?random=4',
+            createdAt: new Date().toISOString()
+        }
+    ];
 }
 
-// 渲染作品项
-function renderPortfolioItem(work) {
+// 渲染作品集
+function renderPortfolio() {
     const portfolioGrid = document.getElementById('portfolioGrid');
     if (!portfolioGrid) return;
-
-    const itemDiv = document.createElement('div');
-    itemDiv.className = 'portfolio-item';
-    itemDiv.setAttribute('data-type', work.type);
-    itemDiv.setAttribute('data-id', work.id);
-
-    let contentHtml = '';
     
-    if (work.type === 'image') {
-        contentHtml = `<img src="${work.url}" alt="${work.title}">`;
-    } else if (work.type === 'video') {
-        contentHtml = `
-            <div class="video-thumbnail">
-                <video src="${work.url}" preload="metadata" style="width: 100%; height: auto; display: block;"></video>
-                <div class="play-icon">
-                    <i class="fas fa-play"></i>
-                </div>
+    portfolioGrid.innerHTML = '';
+    
+    if (portfolioItems.length === 0) {
+        portfolioGrid.innerHTML = `
+            <div class="empty-portfolio">
+                <i class="fas fa-images" style="font-size: 64px; color: #ccc; margin-bottom: 20px;"></i>
+                <p style="color: #666;">暂无作品展示</p>
             </div>
         `;
+        return;
     }
-
-    itemDiv.innerHTML = `
-        <div class="item-content">
-            ${contentHtml}
-            <div class="item-overlay">
-                <div class="item-info">
-                    <h3>${work.title}</h3>
-                    <p>${work.description}</p>
-                </div>
-                                                <div class="item-actions">
-                                    <button class="preview-btn" onclick="previewItem(this)">
-                                        <i class="fas fa-${work.type === 'video' ? 'play' : 'eye'}"></i>
-                                    </button>
-                                    <button class="edit-btn" onclick="editItem(this)">
-                                        <i class="fas fa-edit"></i>
-                                    </button>
-                                    <button class="delete-btn" onclick="deleteItem(this)">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </div>
-            </div>
-        </div>
-    `;
-
-    portfolioGrid.appendChild(itemDiv);
+    
+    portfolioItems.forEach(item => {
+        const itemElement = createPortfolioItem(item);
+        portfolioGrid.appendChild(itemElement);
+    });
 }
 
-// 重置添加作品表单
-function resetAddWorkForm() {
-    const elements = ['workTitle', 'workDescription', 'workType', 'workFile'];
-    elements.forEach(id => {
-        const element = document.getElementById(id);
-        if (element) {
-            if (element.type === 'file') {
-                element.value = '';
-            } else if (element.tagName === 'SELECT') {
-                element.value = 'image';
-            } else {
-                element.value = '';
-            }
-        }
-    });
+// 创建作品项元素
+function createPortfolioItem(item) {
+    const itemDiv = document.createElement('div');
+    itemDiv.className = 'portfolio-item';
+    itemDiv.setAttribute('data-id', item.id);
     
-    // 重置文件拖拽区域
-    const fileDropZone = document.getElementById('fileDropZone');
-    if (fileDropZone) {
-        fileDropZone.innerHTML = `
-            <i class="fas fa-cloud-upload-alt"></i>
-            <p>拖拽文件到此处或点击选择</p>
+    if (item.type === 'image') {
+        itemDiv.innerHTML = `
+            <div class="item-media">
+                <img src="${item.url}" alt="${item.title}" loading="lazy">
+            </div>
+            <div class="item-info">
+                <h3>${item.title}</h3>
+                <p>${item.description}</p>
+                <div class="item-actions">
+                    <button class="preview-btn" onclick="previewItem(this)">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+    } else if (item.type === 'video') {
+        itemDiv.innerHTML = `
+            <div class="item-media">
+                <div class="video-thumbnail">
+                    <video preload="metadata">
+                        <source src="${item.url}" type="video/mp4">
+                    </video>
+                    <div class="play-overlay">
+                        <i class="fas fa-play"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="item-info">
+                <h3>${item.title}</h3>
+                <p>${item.description}</p>
+                <div class="item-actions">
+                    <button class="preview-btn" onclick="previewItem(this)">
+                        <i class="fas fa-play"></i>
+                    </button>
+                </div>
+            </div>
         `;
     }
+    
+    return itemDiv;
 }
 
 // 预览作品
 function previewItem(button) {
-    const portfolioItem = button.closest('.portfolio-item');
+    const item = button.closest('.portfolio-item');
+    const itemId = item.getAttribute('data-id');
+    const portfolioItem = portfolioItems.find(p => p.id === itemId);
+    
     if (!portfolioItem) return;
-
-    const workId = parseInt(portfolioItem.getAttribute('data-id'));
-    const work = portfolioItems.find(w => w.id === workId);
+    
+    const modal = document.getElementById('previewModal');
     const previewContent = document.getElementById('previewContent');
-    const previewModal = document.getElementById('previewModal');
     
-    if (!previewContent || !previewModal) return;
-
-    if (!work) {
-        // 处理示例作品的预览
-        const img = portfolioItem.querySelector('img');
-        const video = portfolioItem.querySelector('video');
-        
-        if (img) {
-            previewContent.innerHTML = `<img src="${img.src}" alt="预览图片">`;
-        } else if (video) {
-            previewContent.innerHTML = `<video src="${video.src}" controls autoplay>`;
-        }
-    } else {
-        // 处理用户上传作品的预览
-        if (work.type === 'image') {
-            previewContent.innerHTML = `<img src="${work.url}" alt="${work.title}">`;
-        } else if (work.type === 'video') {
-            previewContent.innerHTML = `<video src="${work.url}" controls autoplay>`;
-        }
+    if (portfolioItem.type === 'image') {
+        previewContent.innerHTML = `
+            <div class="preview-header">
+                <h3>${portfolioItem.title}</h3>
+            </div>
+            <div class="preview-media">
+                <img src="${portfolioItem.url}" alt="${portfolioItem.title}">
+            </div>
+            <div class="preview-description">
+                <p>${portfolioItem.description}</p>
+            </div>
+        `;
+    } else if (portfolioItem.type === 'video') {
+        previewContent.innerHTML = `
+            <div class="preview-header">
+                <h3>${portfolioItem.title}</h3>
+            </div>
+            <div class="preview-media">
+                <video controls>
+                    <source src="${portfolioItem.url}" type="video/mp4">
+                    您的浏览器不支持视频播放。
+                </video>
+            </div>
+            <div class="preview-description">
+                <p>${portfolioItem.description}</p>
+            </div>
+        `;
     }
     
-    previewModal.style.display = 'block';
-}
-
-// 删除作品
-function deleteItem(button) {
-    if (!requireLogin()) return;
-    if (!confirm('确定要删除这个作品吗？')) return;
-
-    const portfolioItem = button.closest('.portfolio-item');
-    if (!portfolioItem) return;
-
-    const workId = parseInt(portfolioItem.getAttribute('data-id'));
-    
-    if (workId) {
-        // 删除用户上传的作品
-        const workIndex = portfolioItems.findIndex(w => w.id === workId);
-        if (workIndex > -1) {
-            // 释放文件URL
-            URL.revokeObjectURL(portfolioItems[workIndex].url);
-            portfolioItems.splice(workIndex, 1);
-        }
-    }
-    
-    // 从DOM中移除
-    portfolioItem.remove();
+    modal.style.display = 'flex';
 }
 
 // 初始化模态框
 function initializeModals() {
-    // 关闭按钮事件
-    document.querySelectorAll('.close-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            const modal = e.target.closest('.modal');
-            if (modal) {
-                modal.style.display = 'none';
-                
-                // 停止视频播放
-                const video = modal.querySelector('video');
-                if (video) {
-                    video.pause();
-                    video.currentTime = 0;
-                }
+    // 预览模态框关闭功能
+    const previewModal = document.getElementById('previewModal');
+    if (previewModal) {
+        const closeBtn = previewModal.querySelector('.close-btn');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => {
+                previewModal.style.display = 'none';
+            });
+        }
+        
+        // 点击模态框外部关闭
+        previewModal.addEventListener('click', (e) => {
+            if (e.target === previewModal) {
+                previewModal.style.display = 'none';
             }
         });
-    });
-
-    // 点击模态框外部关闭
-    window.addEventListener('click', (e) => {
-        if (e.target.classList.contains('modal')) {
-            e.target.style.display = 'none';
-            
-            // 停止视频播放
-            const video = e.target.querySelector('video');
-            if (video) {
-                video.pause();
-                video.currentTime = 0;
-            }
-        }
-    });
-
+    }
+    
     // ESC键关闭模态框
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
-            const openModals = document.querySelectorAll('.modal[style*="block"]');
-            openModals.forEach(modal => {
+            const modal = document.querySelector('.modal[style*="flex"]');
+            if (modal) {
                 modal.style.display = 'none';
-                
-                // 停止视频播放
-                const video = modal.querySelector('video');
-                if (video) {
-                    video.pause();
-                    video.currentTime = 0;
-                }
-            });
+            }
         }
     });
 }
 
-// 全局变量，存储当前编辑的作品
-let currentEditingWork = null;
-
-// 编辑作品
-function editItem(button) {
-    if (!requireLogin()) return;
-    const portfolioItem = button.closest('.portfolio-item');
-    if (!portfolioItem) return;
-
-    const workId = parseInt(portfolioItem.getAttribute('data-id'));
-    let work = null;
-    
-    if (workId) {
-        // 编辑用户上传的作品
-        work = portfolioItems.find(w => w.id === workId);
-    } else {
-        // 编辑示例作品，创建临时对象
-        const titleElement = portfolioItem.querySelector('.item-info h3');
-        const descElement = portfolioItem.querySelector('.item-info p');
-        
-        work = {
-            id: 'temp_' + Date.now(),
-            title: titleElement ? titleElement.textContent : '',
-            description: descElement ? descElement.textContent : '',
-            isExample: true,
-            element: portfolioItem
-        };
-    }
-    
-    if (!work) return;
-    
-    // 保存当前编辑的作品
-    currentEditingWork = work;
-    
-    // 填充编辑表单
-    const editModal = document.getElementById('editWorkModal');
-    const titleInput = document.getElementById('editWorkTitle');
-    const descInput = document.getElementById('editWorkDescription');
-    
-    if (editModal && titleInput && descInput) {
-        titleInput.value = work.title;
-        descInput.value = work.description;
-        editModal.style.display = 'block';
-    }
-}
-
-// 保存编辑的作品
-function saveEditWork() {
-    if (!currentEditingWork) return;
-    
-    const titleInput = document.getElementById('editWorkTitle');
-    const descInput = document.getElementById('editWorkDescription');
-    
-    if (!titleInput || !descInput) return;
-    
-    const newTitle = titleInput.value.trim();
-    const newDescription = descInput.value.trim();
-    
-    if (!newTitle || !newDescription) {
-        alert('请填写标题和描述');
-        return;
-    }
-    
-    // 更新作品信息
-    currentEditingWork.title = newTitle;
-    currentEditingWork.description = newDescription;
-    
-    if (currentEditingWork.isExample) {
-        // 更新示例作品的DOM
-        const titleElement = currentEditingWork.element.querySelector('.item-info h3');
-        const descElement = currentEditingWork.element.querySelector('.item-info p');
-        
-        if (titleElement) titleElement.textContent = newTitle;
-        if (descElement) descElement.textContent = newDescription;
-    } else {
-        // 更新用户上传作品的DOM
-        const portfolioItem = document.querySelector(`[data-id="${currentEditingWork.id}"]`);
-        if (portfolioItem) {
-            const titleElement = portfolioItem.querySelector('.item-info h3');
-            const descElement = portfolioItem.querySelector('.item-info p');
-            
-            if (titleElement) titleElement.textContent = newTitle;
-            if (descElement) descElement.textContent = newDescription;
-        }
-        
-        // 更新portfolioItems数组中的数据
-        const workIndex = portfolioItems.findIndex(w => w.id === currentEditingWork.id);
-        if (workIndex > -1) {
-            portfolioItems[workIndex].title = newTitle;
-            portfolioItems[workIndex].description = newDescription;
-        }
-    }
-    
-    // 关闭模态框
-    document.getElementById('editWorkModal').style.display = 'none';
-    currentEditingWork = null;
-    
-    // 显示成功消息
-    alert('作品信息已更新');
-}
-
-// 窗口大小改变时重新渲染PDF
-window.addEventListener('resize', () => {
-    if (currentPdf) {
-        setTimeout(() => {
-            renderPage();
-        }, 100);
-    }
+// 页面加载完成后的初始化
+window.addEventListener('load', function() {
+    // 调整主容器高度
+    adjustContainerHeight();
 });
 
-// ========================== 认证功能 ==========================
-
-// 初始化认证功能
-function initializeAuth() {
-    // 检查本地存储的登录状态
-    checkLoginStatus();
+// 调整容器高度以适应窗口
+function adjustContainerHeight() {
+    const topNav = document.querySelector('.top-nav');
+    const mainContainer = document.querySelector('.main-container');
     
-    // 绑定事件监听器
-    bindAuthEvents();
-}
-
-// 检查登录状态
-function checkLoginStatus() {
-    const savedUser = localStorage.getItem('currentUser');
-    if (savedUser) {
-        try {
-            currentUser = JSON.parse(savedUser);
-            isLoggedIn = true;
-            updateUIForLoginState();
-        } catch (e) {
-            console.error('解析用户信息失败:', e);
-            localStorage.removeItem('currentUser');
-        }
+    if (topNav && mainContainer) {
+        const topNavHeight = topNav.offsetHeight;
+        mainContainer.style.height = `calc(100vh - ${topNavHeight}px)`;
     }
 }
 
-// 绑定认证相关事件
-function bindAuthEvents() {
-    // 登录按钮
-    const loginBtn = document.getElementById('loginBtn');
-    if (loginBtn) {
-        loginBtn.addEventListener('click', showLoginModal);
+// 窗口大小改变时重新调整
+window.addEventListener('resize', function() {
+    adjustContainerHeight();
+    if (currentPdf) {
+        renderPage(); // 重新渲染PDF以适应新尺寸
     }
-    
-    // 退出按钮
-    const logoutBtn = document.getElementById('logoutBtn');
-    if (logoutBtn) {
-        logoutBtn.addEventListener('click', logout);
-    }
-    
-    // 登录模态框中的事件
-    const confirmLoginBtn = document.getElementById('confirmLogin');
-    if (confirmLoginBtn) {
-        confirmLoginBtn.addEventListener('click', handleLogin);
-    }
-    
-
-    
-    // 未登录提示模态框中的去登录按钮
-    const goToLoginBtn = document.getElementById('goToLogin');
-    if (goToLoginBtn) {
-        goToLoginBtn.addEventListener('click', () => {
-            hideModal('loginRequiredModal');
-            showLoginModal();
-        });
-    }
-}
-
-// 显示登录模态框
-function showLoginModal() {
-    hideModal('registerModal');
-    showModal('loginModal');
-    
-    // 清空表单
-    document.getElementById('loginUsername').value = '';
-    document.getElementById('loginPassword').value = '';
-}
-
-
-
-// 处理登录
-function handleLogin() {
-    const username = document.getElementById('loginUsername').value.trim();
-    const password = document.getElementById('loginPassword').value.trim();
-    
-    if (!username || !password) {
-        alert('请输入用户名和密码');
-        return;
-    }
-    
-    // 验证管理员账户
-    if (username === ADMIN_USER.username && password === ADMIN_USER.password) {
-        // 登录成功
-        currentUser = { 
-            id: ADMIN_USER.id, 
-            username: ADMIN_USER.username, 
-            email: ADMIN_USER.email,
-            role: ADMIN_USER.role
-        };
-        isLoggedIn = true;
-        
-        // 保存登录状态
-        localStorage.setItem('currentUser', JSON.stringify(currentUser));
-        
-        // 更新UI
-        updateUIForLoginState();
-        
-        // 关闭模态框
-        hideModal('loginModal');
-        
-        alert('管理员登录成功！');
-    } else {
-        alert('用户名或密码错误，仅限管理员访问');
-    }
-}
-
-
-
-// 退出登录
-function logout() {
-    if (confirm('确定要退出登录吗？')) {
-        isLoggedIn = false;
-        currentUser = null;
-        
-        // 清除本地存储
-        localStorage.removeItem('currentUser');
-        
-        // 更新UI
-        updateUIForLoginState();
-        
-        alert('已退出登录');
-    }
-}
-
-
-
-// 更新UI以反映登录状态
-function updateUIForLoginState() {
-    const loginBtn = document.getElementById('loginBtn');
-    const userInfo = document.getElementById('userInfo');
-    const usernameSpan = document.getElementById('username');
-    
-    if (isLoggedIn && currentUser) {
-        // 已登录状态
-        loginBtn.style.display = 'none';
-        userInfo.style.display = 'flex';
-        usernameSpan.textContent = currentUser.username;
-    } else {
-        // 未登录状态
-        loginBtn.style.display = 'flex';
-        userInfo.style.display = 'none';
-    }
-}
-
-// 检查是否需要登录
-function requireLogin(action) {
-    if (!isLoggedIn) {
-        showModal('loginRequiredModal');
-        return false;
-    }
-    return true;
-}
-
-// 显示模态框
-function showModal(modalId) {
-    const modal = document.getElementById(modalId);
-    if (modal) {
-        modal.style.display = 'block';
-    }
-}
-
-// 隐藏模态框
-function hideModal(modalId) {
-    const modal = document.getElementById(modalId);
-    if (modal) {
-        modal.style.display = 'none';
-    }
-}
+});
